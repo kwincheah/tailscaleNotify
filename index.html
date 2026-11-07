@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Taildrop Alert</title>
+  <style>
+    :root {
+      /* macOS Light Mode Acrylic & System Colors */
+      --glass-bg: rgba(246, 246, 246, 0.82);
+      --glass-border: rgba(0, 0, 0, 0.12);
+      --glass-shadow: 0 20px 50px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(255, 255, 255, 0.4) inset;
+      
+      --text-primary: rgba(0, 0, 0, 0.88);
+      --text-secondary: rgba(0, 0, 0, 0.52);
+      --text-tertiary: rgba(0, 0, 0, 0.35);
+      
+      --preview-bg: rgba(0, 0, 0, 0.04);
+      --preview-border: rgba(0, 0, 0, 0.08);
+      
+      --btn-secondary-bg: rgba(0, 0, 0, 0.05);
+      --btn-secondary-hover: rgba(0, 0, 0, 0.09);
+      --btn-secondary-border: rgba(0, 0, 0, 0.04);
+      
+      --accent-blue: #007aff;
+      --accent-gradient: linear-gradient(180deg, #288cff 0%, #0070ea 100%);
+      --accent-shadow: 0 1px 2px rgba(0, 0, 0, 0.15), 0 0 0 0.5px rgba(0, 0, 0, 0.12);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        /* macOS Dark Mode Acrylic & System Colors */
+        --glass-bg: rgba(30, 30, 30, 0.78);
+        --glass-border: rgba(255, 255, 255, 0.14);
+        --glass-shadow: 0 24px 54px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+        
+        --text-primary: rgba(255, 255, 255, 0.92);
+        --text-secondary: rgba(255, 255, 255, 0.58);
+        --text-tertiary: rgba(255, 255, 255, 0.35);
+        
+        --preview-bg: rgba(0, 0, 0, 0.25);
+        --preview-border: rgba(255, 255, 255, 0.09);
+        
+        --btn-secondary-bg: rgba(255, 255, 255, 0.1);
+        --btn-secondary-hover: rgba(255, 255, 255, 0.15);
+        --btn-secondary-border: rgba(255, 255, 255, 0.06);
+        
+        --accent-gradient: linear-gradient(180deg, #1b84ff 0%, #0060df 100%);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+     body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+      margin: 0;
+      width: 100vw;
+      height: 100vh;
+      background: transparent;
+      overflow: hidden;
+      color: var(--text-primary);
+    }
+
+    .notification-card {
+      width: 100vw;  /* Fill the whole window */
+      height: 100vh; /* Fill the whole window */
+      border-radius: 14px; /* macOS native corner radius */
+      background: var(--glass-bg);
+      backdrop-filter: blur(40px) saturate(180%);
+      -webkit-backdrop-filter: blur(40px) saturate(180%);
+      border: 0.5px solid var(--glass-border);
+      box-shadow: var(--glass-shadow);
+      display: flex;
+      flex-direction: column;
+      /* Add 38px top padding to make room for the macOS traffic lights */
+      padding: 38px 20px 20px 20px; 
+      gap: 14px;
+    }
+
+    /* Entire header acts as a smooth macOS window drag handle */
+    .header-drag-zone {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      cursor: default;
+      padding-top: 2px;
+    }
+
+    .title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .app-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 5px;
+      background: var(--accent-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      box-shadow: 0 2px 5px rgba(0, 122, 255, 0.3);
+    }
+
+    .title {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--text-primary);
+    }
+
+    .subtitle {
+      margin: 0;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+
+    /* File Name Display */
+    .filename-container {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .filename-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 600;
+      color: var(--text-tertiary);
+    }
+
+    .filename {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: -0.015em;
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Preview Card */
+    .preview-box {
+      flex: 1;
+      background: var(--preview-bg);
+      border-radius: 14px;
+      border: 0.5px solid var(--preview-border);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .preview-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      border-radius: 13px;
+    }
+
+    .preview-empty {
+      color: var(--text-tertiary);
+      font-size: 0.85rem;
+      font-weight: 450;
+      text-align: center;
+      max-width: 80%;
+      line-height: 1.4;
+    }
+
+    /* macOS Pill Buttons */
+    .btn-container {
+      display: flex;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    button {
+      flex: 1;
+      height: 36px;
+      border-radius: 10px;
+      font-size: 0.86rem;
+      font-weight: 550;
+      cursor: pointer;
+      transition: all 0.15s cubic-bezier(0.2, 0, 0, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      outline: none;
+    }
+
+    button:active {
+      transform: scale(0.975);
+    }
+
+    .btn-close {
+      color: var(--text-primary);
+      background: var(--btn-secondary-bg);
+      border: 0.5px solid var(--btn-secondary-border);
+    }
+
+    .btn-close:hover {
+      background: var(--btn-secondary-hover);
+    }
+
+    .btn-open {
+      color: #ffffff;
+      background: var(--accent-gradient);
+      border: 0.5px solid rgba(255, 255, 255, 0.18);
+      box-shadow: var(--accent-shadow);
+      font-weight: 600;
+    }
+
+    .btn-open:hover {
+      filter: brightness(1.06);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="notification-card">
+    <!-- Add data-tauri-drag-region so you can drag the frameless window -->
+    <div class="header-drag-zone" data-tauri-drag-region>
+      <div class="title-row" data-tauri-drag-region>
+        <div class="app-icon" data-tauri-drag-region>TD</div>
+        <h2 class="title" data-tauri-drag-region>Taildrop Alert</h2>
+      </div>
+      <p class="subtitle" data-tauri-drag-region>New file received via Taildrop</p>
+    </div>
+
+    <div class="filename-container">
+      <span class="filename-label">File Name</span>
+      <div class="filename" id="file-name" title="Waiting for file...">Waiting for file...</div>
+    </div>
+
+    <div class="preview-box" id="preview-container">
+      <span class="preview-empty">No preview available</span>
+    </div>
+
+    <div class="btn-container">
+      <button class="btn-close" id="close-btn" type="button">Dismiss</button>
+      <button class="btn-open" id="open-btn" type="button">Open File</button>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

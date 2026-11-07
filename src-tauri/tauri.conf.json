@@ -1,0 +1,32 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "tailscalenotify",
+  "version": "0.1.0",
+  "identifier": "com.tailscale.notify",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "macOSPrivateApi": true,
+    "windows": [
+      {
+        "title": "Taildrop Alert",
+        "width": 360,
+        "height": 440,
+        "resizable": false,
+        "fullscreen": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "visible": false,
+        "decorations": true,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "shadow": false,
+        "visibleOnAllWorkspaces": true
+      }
+    ]
+  }
+}
