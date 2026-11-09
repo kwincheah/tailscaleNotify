@@ -144,4 +144,4 @@ tailscaleNotify/
 
 ## 📄 License
 
-MIT (or your chosen project license).
+MIT
