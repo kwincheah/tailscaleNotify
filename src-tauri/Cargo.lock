@@ -3413,6 +3413,8 @@ dependencies = [
  "base64 0.22.1",
  "dirs-next",
  "notify",
+ "objc2",
+ "objc2-app-kit",
  "serde",
  "tauri",
  "tauri-build",

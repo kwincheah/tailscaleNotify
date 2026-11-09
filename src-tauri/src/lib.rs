@@ -154,6 +154,43 @@ fn build_preview_data_url(path: &Path) -> Option<String> {
     Some(format!("data:{};base64,{}", mime, encoded))
 }
 
+/// Lets the alert appear over another app's full-screen Space. macOS only puts a background app's
+/// window there if it is a non-activating NSPanel that can join all Spaces as a full-screen
+/// auxiliary; Tauri's `visibleOnAllWorkspaces` alone leaves it on the desktop until the user
+/// leaves full screen. Status level is set here rather than via `set_always_on_top`, which would
+/// reset it to the lower floating level. Must run on the main thread.
+#[cfg(target_os = "macos")]
+fn float_over_full_screen_apps(window: &tauri::WebviewWindow) {
+    use objc2::ClassType;
+    use objc2_app_kit::{
+        NSPanel, NSStatusWindowLevel, NSWindow, NSWindowCollectionBehavior, NSWindowStyleMask,
+    };
+
+    let Ok(ns_window) = window.ns_window() else {
+        return;
+    };
+    // SAFETY: Tauri returns a valid NSWindow pointer that lives as long as `window`.
+    let ns_window: &NSWindow = unsafe { &*ns_window.cast::<NSWindow>() };
+
+    if !ns_window.styleMask().contains(NSWindowStyleMask::NonactivatingPanel) {
+        // SAFETY: NSPanel is an NSWindow subclass with no extra instance state, so the existing
+        // object is valid as one (the same conversion the tauri-nspanel plugin performs).
+        unsafe {
+            objc2::ffi::object_setClass(
+                (ns_window as *const NSWindow).cast_mut().cast(),
+                NSPanel::class(),
+            );
+        }
+        ns_window.setStyleMask(ns_window.styleMask() | NSWindowStyleMask::NonactivatingPanel);
+    }
+    ns_window.setCollectionBehavior(
+        ns_window.collectionBehavior()
+            | NSWindowCollectionBehavior::CanJoinAllSpaces
+            | NSWindowCollectionBehavior::FullScreenAuxiliary,
+    );
+    ns_window.setLevel(NSStatusWindowLevel);
+}
+
 /// `take_focus` is false for automatic alerts so an incoming file never steals keyboard focus.
 fn show_main_window(app_handle: &AppHandle, take_focus: bool) {
     let app_handle_for_closure = app_handle.clone();
@@ -168,9 +205,11 @@ fn show_main_window(app_handle: &AppHandle, take_focus: bool) {
             eprintln!("main window not found");
             return;
         };
+        // Before show(), so the window opens on the Space the user is on, full-screen ones included.
+        #[cfg(target_os = "macos")]
+        float_over_full_screen_apps(&main_window);
         let _ = main_window.unminimize();
         let _ = main_window.show();
-        let _ = main_window.set_always_on_top(true);
         if take_focus {
             let _ = main_window.set_focus();
         }
