@@ -15,8 +15,9 @@ use tauri_plugin_autostart::ManagerExt;
 use tauri_plugin_opener::OpenerExt;
 
 /// A file must be quiet (no new events, unchanged size/mtime) for this long before we notify.
-const QUIET_PERIOD: Duration = Duration::from_secs(2);
-const POLL_INTERVAL: Duration = Duration::from_millis(500);
+/// Taildrop moves finished files into place whole, so a short window is enough.
+const QUIET_PERIOD: Duration = Duration::from_millis(300);
+const POLL_INTERVAL: Duration = Duration::from_millis(100);
 
 #[derive(Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]

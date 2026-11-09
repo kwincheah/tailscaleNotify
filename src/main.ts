@@ -59,6 +59,14 @@ function renderPayload(payload: FilePayload): void {
   } else {
     setPreviewUnavailable();
   }
+
+  // Restart the arrival animation; forcing a reflow lets it replay on back-to-back files.
+  const card = document.querySelector<HTMLElement>('.notification-card');
+  if (card) {
+    card.classList.remove('arrived');
+    void card.offsetWidth;
+    card.classList.add('arrived');
+  }
 }
 
 async function dismissWindow(): Promise<void> {
